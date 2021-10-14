@@ -10,11 +10,11 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
 	_ "k8s.io/kubectl/pkg/cmd/cp"
-	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	_ "unsafe"
 )
 
@@ -31,7 +31,9 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	go func() {
 		defer writer.Close()
 		err := makeTar(srcPath, destPath, writer)
-		cmdutil.CheckErr(err)
+		if err != nil {
+			klog.Errorf("makeTar error %s\n", err)
+		}
 	}()
 	var cmdArr []string
 
@@ -106,6 +108,8 @@ func (i *pod) copyFromPod(srcPath string, destPath string) error {
 		klog.Errorf("error %s\n", err)
 		return err
 	}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
 		defer outStream.Close()
 		err = exec.Stream(remotecommand.StreamOptions{
@@ -114,13 +118,24 @@ func (i *pod) copyFromPod(srcPath string, destPath string) error {
 			Stderr: os.Stderr,
 			Tty:    false,
 		})
-		cmdutil.CheckErr(err)
+		defer wg.Done()
 	}()
+
 	prefix := getPrefix(srcPath)
 	prefix = path.Clean(prefix)
 	prefix = stripPathShortcuts(prefix)
 	destPath = path.Join(destPath, path.Base(prefix))
+	wg.Wait()
+	if err != nil {
+		klog.Errorf("exec error %s\n", err)
+		return err
+	}
 	err = untarAll(reader, destPath, prefix)
+	wg.Wait()
+	if err != nil {
+		klog.Errorf("untarAll error %s\n", err)
+		return err
+	}
 	return err
 }
 
