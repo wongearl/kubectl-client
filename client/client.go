@@ -7,7 +7,8 @@ import (
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"log"
+	"k8s.io/klog/v2"
+
 	"os"
 	"path/filepath"
 	"sync"
@@ -18,7 +19,7 @@ func InitClient() (*kubernetes.Clientset, error) {
 	var once sync.Once
 	var clientset *kubernetes.Clientset
 	once.Do(func() {
-		log.Print("start doInit()")
+		klog.Info("start doInit()")
 		clientset, _ = doInit()
 	})
 	return clientset, nil
@@ -27,7 +28,7 @@ func InitClient() (*kubernetes.Clientset, error) {
 func CoreV1Client() corev1.CoreV1Interface {
 	clientset, e := InitClient()
 	if e != nil {
-		log.Fatalf("init client error %s\n", e)
+		klog.Errorf("init client error %s\n", e)
 	}
 	return clientset.CoreV1()
 }
@@ -76,12 +77,12 @@ func InitRestClient() (*rest.Config, error, *corev1client.CoreV1Client) {
 	// the client objects we create.
 	restconfig, err := kubeconfig.ClientConfig()
 	if err != nil {
-		panic(err)
+		klog.Error(err)
 	}
 	// Create a Kubernetes core/v1 client.
 	coreclient, err := corev1client.NewForConfig(restconfig)
 	if err != nil {
-		panic(err)
+		klog.Error(err)
 	}
 	return restconfig, err, coreclient
 }

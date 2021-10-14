@@ -6,8 +6,8 @@ import (
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/klog/v2"
 	_ "k8s.io/kubectl/pkg/cmd/cp"
-	"log"
 	"os"
 	"strings"
 	_ "unsafe"
@@ -21,12 +21,12 @@ func (i *pod) Exec(cmd []string) error {
 
 	restconfig, err := kubeconfig.ClientConfig()
 	if err != nil {
-		panic(err)
+		klog.Error(err)
 	}
 
 	coreclient, err := corev1client.NewForConfig(restconfig)
 	if err != nil {
-		panic(err)
+		klog.Error(err)
 	}
 
 	req := coreclient.RESTClient().
@@ -46,7 +46,7 @@ func (i *pod) Exec(cmd []string) error {
 
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %s\n", err)
+		klog.Errorf("error %s\n", err)
 		return err
 	}
 	err = exec.Stream(remotecommand.StreamOptions{

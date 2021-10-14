@@ -8,9 +8,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/klog/v2"
 	_ "k8s.io/kubectl/pkg/cmd/cp"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -58,7 +58,7 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %s\n", err)
+		klog.Errorf("error %s\n", err)
 		return err
 	}
 	err = exec.Stream(remotecommand.StreamOptions{
@@ -68,7 +68,7 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 		Tty:    false,
 	})
 	if err != nil {
-		log.Fatalf("error %s\n", err)
+		klog.Errorf("error %s\n", err)
 		return err
 	}
 	return nil
@@ -103,7 +103,7 @@ func (i *pod) copyFromPod(srcPath string, destPath string) error {
 
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
-		log.Fatalf("error %s\n", err)
+		klog.Errorf("error %s\n", err)
 		return err
 	}
 	go func() {
