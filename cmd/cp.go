@@ -14,7 +14,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"sync"
 	_ "unsafe"
 )
 
@@ -108,8 +107,6 @@ func (i *pod) copyFromPod(srcPath string, destPath string) error {
 		klog.Errorf("error %s\n", err)
 		return err
 	}
-	wg := sync.WaitGroup{}
-	wg.Add(1)
 	go func() {
 		defer outStream.Close()
 		err = exec.Stream(remotecommand.StreamOptions{
@@ -118,20 +115,14 @@ func (i *pod) copyFromPod(srcPath string, destPath string) error {
 			Stderr: os.Stderr,
 			Tty:    false,
 		})
-		defer wg.Done()
+		klog.Errorf("exec.Stream error %s\n", err)
 	}()
 
 	prefix := getPrefix(srcPath)
 	prefix = path.Clean(prefix)
 	prefix = stripPathShortcuts(prefix)
 	destPath = path.Join(destPath, path.Base(prefix))
-	wg.Wait()
-	if err != nil {
-		klog.Errorf("exec error %s\n", err)
-		return err
-	}
 	err = untarAll(reader, destPath, prefix)
-	wg.Wait()
 	if err != nil {
 		klog.Errorf("untarAll error %s\n", err)
 		return err
