@@ -22,7 +22,6 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	restconfig, err, coreclient := client.InitRestClient()
 
 	reader, writer := io.Pipe()
-	defer writer.Close()
 	if destPath != "/" && strings.HasSuffix(string(destPath[len(destPath)-1]), "/") {
 		destPath = destPath[:len(destPath)-1]
 	}
@@ -31,6 +30,7 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	}
 	var makeTarerr error
 	go func() {
+		defer writer.Close()
 		makeTarerr = makeTar(srcPath, destPath, writer)
 		if makeTarerr != nil {
 			klog.Errorf("makeTar error %s\n", makeTarerr)
@@ -69,21 +69,21 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 		}
 
 	}
+	fake := &fakeMassiveDataPty{}
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  reader,
-		Stdout: writer,
-		Stderr: writer,
+		Stdout: fake,
+		Stderr: fake,
 		Tty:    false,
 	})
 	if err != nil {
 		klog.Errorf("error %s\n", err)
-		message := []byte{}
-		_, err := writer.Write(message)
+		//fmt.Println("fake.message:",string(fake.message))
 
 		if makeTarerr != nil {
-			return errors.New(err.Error() + "," + makeTarerr.Error() + "," + string(message))
+			return errors.New(err.Error() + "," + makeTarerr.Error() + "," + string(fake.message))
 		} else {
-			return err
+			return errors.New(err.Error() + "," + string(fake.message))
 		}
 	}
 	return nil
