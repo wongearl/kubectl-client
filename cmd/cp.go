@@ -22,6 +22,7 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	restconfig, err, coreclient := client.InitRestClient()
 
 	reader, writer := io.Pipe()
+	defer writer.Close()
 	if destPath != "/" && strings.HasSuffix(string(destPath[len(destPath)-1]), "/") {
 		destPath = destPath[:len(destPath)-1]
 	}
@@ -30,7 +31,6 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	}
 	var makeTarerr error
 	go func() {
-		defer writer.Close()
 		makeTarerr = makeTar(srcPath, destPath, writer)
 		if makeTarerr != nil {
 			klog.Errorf("makeTar error %s\n", makeTarerr)
