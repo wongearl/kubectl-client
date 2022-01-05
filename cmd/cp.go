@@ -71,14 +71,17 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	}
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  reader,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
+		Stdout: writer,
+		Stderr: writer,
 		Tty:    false,
 	})
 	if err != nil {
 		klog.Errorf("error %s\n", err)
+		message := []byte{}
+		_, err := writer.Write(message)
+
 		if makeTarerr != nil {
-			return errors.New(err.Error() + "," + makeTarerr.Error())
+			return errors.New(err.Error() + "," + makeTarerr.Error() + "," + string(message))
 		} else {
 			return err
 		}
