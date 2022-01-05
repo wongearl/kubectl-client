@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"github.com/wongearl/kubectl-client/client"
 	"io"
@@ -27,11 +28,12 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	if err := checkDestinationIsDir(i, destPath); err == nil {
 		destPath = destPath + "/" + path.Base(srcPath)
 	}
+	var makeTarerr error
 	go func() {
 		defer writer.Close()
-		err := makeTar(srcPath, destPath, writer)
-		if err != nil {
-			klog.Errorf("makeTar error %s\n", err)
+		makeTarerr = makeTar(srcPath, destPath, writer)
+		if makeTarerr != nil {
+			klog.Errorf("makeTar error %s\n", makeTarerr)
 		}
 	}()
 	var cmdArr []string
@@ -60,7 +62,12 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	exec, err := remotecommand.NewSPDYExecutor(restconfig, "POST", req.URL())
 	if err != nil {
 		klog.Errorf("error %s\n", err)
-		return err
+		if makeTarerr != nil {
+			return errors.New(err.Error() + "," + makeTarerr.Error())
+		} else {
+			return err
+		}
+
 	}
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  reader,
@@ -70,7 +77,11 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 	})
 	if err != nil {
 		klog.Errorf("error %s\n", err)
-		return err
+		if makeTarerr != nil {
+			return errors.New(err.Error() + "," + makeTarerr.Error())
+		} else {
+			return err
+		}
 	}
 	return nil
 }
