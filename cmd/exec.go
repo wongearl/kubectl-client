@@ -73,6 +73,19 @@ func (s *fakeMassiveDataPty) Write(p []byte) (int, error) {
 	s.message = p
 	return len(p), nil
 }
+
+type fakeMassiveDataPtyErr struct {
+	message []byte
+}
+
+func (s *fakeMassiveDataPtyErr) Read(p []byte) (int, error) {
+	return copy(p, s.message), nil
+}
+
+func (s *fakeMassiveDataPtyErr) Write(p []byte) (int, error) {
+	s.message = p
+	return len(p), nil
+}
 func (i *pod) KubectlExec(cmd []string) ([]byte, error) {
 	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),

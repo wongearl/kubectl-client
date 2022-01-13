@@ -70,10 +70,11 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 
 	}
 	fake := &fakeMassiveDataPty{}
+	fakeErr := &fakeMassiveDataPtyErr{}
 	err = exec.Stream(remotecommand.StreamOptions{
 		Stdin:  reader,
 		Stdout: fake,
-		Stderr: fake,
+		Stderr: fakeErr,
 		Tty:    false,
 	})
 	if err != nil {
@@ -81,9 +82,9 @@ func (i *pod) copyToPod(srcPath string, destPath string) error {
 		//fmt.Println("fake.message:",string(fake.message))
 
 		if makeTarerr != nil {
-			return errors.New(err.Error() + "," + makeTarerr.Error() + "," + string(fake.message))
+			return errors.New(err.Error() + "," + makeTarerr.Error() + "," + string(fake.message) + "," + string(fakeErr.message))
 		} else {
-			return errors.New(err.Error() + "," + string(fake.message))
+			return errors.New(err.Error() + "," + string(fake.message) + "," + string(fakeErr.message))
 		}
 	}
 	return nil
