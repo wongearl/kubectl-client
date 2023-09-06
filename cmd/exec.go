@@ -70,7 +70,7 @@ func (s *fakeMassiveDataPty) Read(p []byte) (int, error) {
 }
 
 func (s *fakeMassiveDataPty) Write(p []byte) (int, error) {
-	s.message = p
+	s.message = append(s.message, p...)
 	return len(p), nil
 }
 
